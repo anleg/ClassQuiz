@@ -39,11 +39,22 @@ RUN pnpm run build
 # pull the Node.js Docker image
 FROM node:19-bullseye-slim
 
-# change working directory
 WORKDIR /app
+
+# this must be run as root
+RUN corepack enable
+
+# create user classquiz
+RUN useradd classquiz --home-dir=/app && chown -R classquiz:classquiz /app
+
+USER classquiz
+
+# change working directory
 COPY --from=builder /usr/src/app/package.json .
 COPY --from=builder /usr/src/app/pnpm-lock.yaml .
-RUN corepack enable && corepack prepare pnpm@8.6.1 --activate && pnpm i
+
+RUN corepack prepare pnpm@8.6.1 --activate && pnpm i
+
 # copy files from previous step
 COPY --from=builder /usr/src/app/build .
 COPY --from=builder /usr/src/app/node_modules ./node_modules
